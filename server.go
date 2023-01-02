@@ -16,5 +16,7 @@ func main() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
+	e.POST("/expenses", expense.CreateExpensesHandler)
+
 	log.Fatal(e.Start(os.Getenv("PORT")))
 }
