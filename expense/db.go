@@ -2,7 +2,6 @@ package expense
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
 	"os"
 
@@ -28,8 +27,6 @@ func InitDB() {
 			tags TEXT[]
 		);
 	`
-
-	fmt.Printf("\ndb %v\n", db)
 	_, err = db.Exec(createTb)
 	if err != nil {
 		log.Fatal("can't create table", err)
