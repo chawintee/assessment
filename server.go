@@ -2,40 +2,62 @@ package main
 
 import (
 	"context"
-	"log"
+	"database/sql"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
 	"time"
 
-	"github.com/chawintee/assessment/expense"
+	"github.com/chawintee/assessment/handle"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
+	"github.com/labstack/gommon/log"
 )
 
-func main() {
-	expense.InitDB()
-	e := echo.New()
-
-	authMiddleware := func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			authorization := c.Request().Header.Get("Authorization")
-			if authorization != "November 10, 2009" {
-				return c.JSON(http.StatusUnauthorized, "Unauthorized")
-			}
-			return next(c)
-		}
+func SetUpDB(url string) (*sql.DB, func()) {
+	var err error
+	db, err := sql.Open("postgres", url)
+	if err != nil {
+		log.Fatal("Connect to database error", err)
 	}
 
-	e.Use(authMiddleware)
-	e.Use(middleware.Logger())
-	e.Use(middleware.Recover())
+	createTb := `
+		CREATE TABLE IF NOT EXISTS expenses (
+			id SERIAL PRIMARY KEY,
+			title TEXT,
+			amount FLOAT,
+			note TEXT,
+			tags TEXT[]
+		);
+	`
+	_, err = db.Exec(createTb)
+	if err != nil {
+		log.Fatal("can't create table", err)
+	}
 
-	e.POST("/expenses", expense.CreateExpensesHandler)
-	e.GET("/expenses/:id", expense.GetExpenseHandler)
-	e.PUT("/expenses/:id", expense.UpdateExpenseHandler)
-	e.GET("/expenses", expense.GetExpensesHandler)
+	teardown := func() {
+		db.Close()
+	}
+	return db, teardown
+}
 
+func main() {
+	fmt.Println("Please use server.go for main file")
+	fmt.Println("start at port:", os.Getenv("PORT"))
+	fmt.Println("start at database_url:", os.Getenv("DATABASE_URL"))
+
+	db, teardown := SetUpDB(os.Getenv("DATABASE_URL"))
+	defer teardown()
+
+	e := echo.New()
+	h := handle.NewApplication(db)
+	e.Logger.SetLevel(log.INFO)
+	e.Use(h.AuthMiddleware)
+	e.POST("/expenses", h.CreateExpenses)
+	e.GET("/expenses", h.GetExpenses)
+	e.GET("/expenses/:id", h.GetExpense)
+	e.PUT("/expenses/:id", h.EditExpense)
+	// log.Fatal(e.Start(os.Getenv("PORT")))
 	go func() {
 		if err := e.Start(os.Getenv("PORT")); err != nil && err != http.ErrServerClosed { // Start server
 			e.Logger.Fatal("shutting down the server")
@@ -50,6 +72,4 @@ func main() {
 	if err := e.Shutdown(ctx); err != nil {
 		e.Logger.Fatal(err)
 	}
-	log.Println("graceful-shutdown")
-
 }
