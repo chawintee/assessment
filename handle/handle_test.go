@@ -80,3 +80,33 @@ func TestGetExpense(t *testing.T) {
 		assert.Equal(t, expected, strings.TrimSpace(rec.Body.String()))
 	}
 }
+
+func TestCreateExpense(t *testing.T) {
+	// Arrange
+	e := echo.New()
+	mockTestBody := `{"id":1,"title":"Expense 1","amount":100,"note":"Note for expense 1","tags":["tag1","tag2"]}`
+	req := httptest.NewRequest(http.MethodPost, "/expenses", strings.NewReader(mockTestBody))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+
+	newsMockRows := sqlmock.NewRows([]string{"id"}).AddRow("1")
+
+	db, mock, err := sqlmock.New()
+	mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO expenses (title, amount, note, tags) values ($1, $2, $3, $4)  RETURNING id`)).
+		WithArgs("Expense 1", 100, "Note for expense 1", `{"tag1","tag2"}`).
+		WillReturnRows(newsMockRows)
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+	}
+	expected := "{\"id\":1,\"title\":\"Expense 1\",\"amount\":100,\"note\":\"Note for expense 1\",\"tags\":[\"tag1\",\"tag2\"]}"
+	h := handler{db}
+	c := e.NewContext(req, rec)
+	// Act
+	err = h.CreateExpenses(c)
+
+	// Assertions
+	if assert.NoError(t, err) {
+		assert.Equal(t, http.StatusCreated, rec.Code)
+		assert.Equal(t, expected, strings.TrimSpace(rec.Body.String()))
+	}
+}
