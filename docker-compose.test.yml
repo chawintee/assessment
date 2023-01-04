@@ -1,0 +1,27 @@
+version: '3.2'
+
+networks:
+  integration-test-example:
+
+services:
+  it_tests:
+    build:
+      context: .
+      dockerfile: ./Dockerfile.test
+    volumes:
+      - $PWD:/go/src/target
+    depends_on:
+      - db
+    networks:
+      - integration-test-example
+  db:
+    image: postgres:15.1
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: gokbtg
+    restart: on-failure
+    volumes:
+      - ./db:/docker-entrypoint-initdb.d/
+    networks:
+      - integration-test-example
