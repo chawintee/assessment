@@ -72,7 +72,7 @@ func (h *handler) GetExpense(c echo.Context) error {
 	}
 }
 
-func (h *handler) EditExpense(c echo.Context) error {
+func (h *handler) UpdateExpenses(c echo.Context) error {
 	var e Expense
 	id := c.Param("id")
 	err := c.Bind(&e)

@@ -56,7 +56,7 @@ func main() {
 	e.POST("/expenses", h.CreateExpenses)
 	e.GET("/expenses", h.GetExpenses)
 	e.GET("/expenses/:id", h.GetExpense)
-	e.PUT("/expenses/:id", h.EditExpense)
+	e.PUT("/expenses/:id", h.UpdateExpenses)
 	// log.Fatal(e.Start(os.Getenv("PORT")))
 	go func() {
 		if err := e.Start(os.Getenv("PORT")); err != nil && err != http.ErrServerClosed { // Start server
