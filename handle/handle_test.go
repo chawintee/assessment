@@ -81,7 +81,7 @@ func TestGetExpense(t *testing.T) {
 	}
 }
 
-func TestCreateExpense(t *testing.T) {
+func TestCreateExpenses(t *testing.T) {
 	// Arrange
 	e := echo.New()
 	mockTestBody := `{"id":1,"title":"Expense 1","amount":100,"note":"Note for expense 1","tags":["tag1","tag2"]}`
